@@ -1,0 +1,363 @@
+ 一、整体系统架构（先有全局观）
+
+建议采用**前后端分离 + 双数据库架构（关系型 + 图数据库）**
+
+ 1️⃣ 架构分层
+
+```
+前端（Vue + Element Plus + ECharts/D3）
+        ↓
+后端（Spring Boot）
+        ↓
+-----------------------------------
+关系型数据库（MySQL） → 用户/课程/日志
+图数据库（Neo4j）     → 知识图谱
+```
+
+---
+
+ 二、核心模块拆解（对应你的任务要求）
+
+我按你论文要求的5大模块，帮你细化到“能写代码”的程度。
+
+---
+
+ 1️⃣ 用户管理模块
+
+ 功能
+
+* 注册 / 登录（JWT鉴权）
+* 用户信息（学习偏好、能力等级）
+* 学习记录（学过哪些知识点）
+
+ 表设计（MySQL）
+
+**user**
+
+* id
+* username
+* password
+* level（初级/中级/高级）
+* interest（偏好标签）
+
+**learning_record**
+
+* user_id
+* knowledge_id
+* progress
+* score
+
+---
+
+ 2️⃣ 知识图谱模块（核心！！！）
+
+👉 用 **Neo4j**
+
+ 1. 节点设计（Node）
+
+* Knowledge（知识点）
+* Course（课程）
+* Chapter（章节）
+
+ 2. 关系设计（Relation）
+
+* `PREREQUISITE`（前置知识）
+* `BELONG_TO`（属于课程）
+* `SIMILAR_TO`（相似知识）
+* `HAS_CHAPTER`
+
+---
+
+ 3. 示例（Cypher）
+
+```cypher
+CREATE (a:Knowledge {name: "线性回归", difficulty: 3})
+CREATE (b:Knowledge {name: "概率论", difficulty: 2})
+CREATE (b)-[:PREREQUISITE]->(a)
+```
+
+---
+
+ 4. Spring Boot接入
+
+用：
+
+* Spring Data Neo4j
+
+```java
+@Node("Knowledge")
+public class Knowledge {
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+    private Integer difficulty;
+}
+```
+
+---
+
+ 3️⃣ 个性化学习路径推荐模块（重点难点🔥）
+
+这个模块是你论文“含金量最高”的地方。
+
+---
+
+ 思路：三层融合推荐
+
+---
+
+ ✅ 第一层：图搜索（保证知识逻辑）
+
+用：
+
+* BFS / DFS
+* 或最短路径算法
+
+👉 Neo4j直接支持：
+
+```cypher
+MATCH path = shortestPath(
+ (start:Knowledge {name:"基础"})
+ -[:PREREQUISITE*]->
+ (end:Knowledge {name:"机器学习"})
+)
+RETURN path
+```
+
+---
+
+ ✅ 第二层：难度匹配
+
+规则：
+
+* 当前用户level = 2
+* 推荐 difficulty = 2~3
+
+```text
+score = |knowledge.difficulty - user.level|
+```
+
+---
+
+ ✅ 第三层：兴趣推荐（简单版）
+
+两种方案（任选一个就够毕业）：
+
+ ✔ 内容相似度（推荐简单）
+
+* 标签匹配
+* TF-IDF
+
+ ✔ 协同过滤（加分项）
+
+* 用户A学了什么
+* 相似用户推荐
+
+---
+
+ ✅ 最终融合算法（论文亮点✨）
+
+```text
+FinalScore = 
+  α * 路径合理性 +
+  β * 难度匹配 +
+  γ * 兴趣相似度
+```
+
+---
+
+ 4️⃣ 可视化交互模块（前端亮点🔥）
+
+技术选型：
+
+* 图谱：**D3.js（高级） or ECharts（简单推荐）**
+* UI：Element Plus
+
+---
+
+ 展示内容：
+
+ ① 知识图谱
+
+* 节点：知识点
+* 边：关系
+
+ ② 学习路径
+
+* 高亮路径
+* 进度条
+
+---
+
+ 示例（ECharts）
+
+```js
+series: [{
+  type: 'graph',
+  layout: 'force',
+  data: nodes,
+  links: links
+}]
+```
+
+---
+
+ 可交互功能
+
+* 点击节点 → 显示详情
+* 拖动图谱
+* 路径高亮
+* 学习进度显示
+
+---
+
+ 5️⃣ 后台管理模块
+
+ 功能：
+
+* 知识点管理（CRUD）
+* 关系管理
+* 课程资源上传
+* 用户管理
+
+---
+
+ 三、后端接口设计（核心API）
+
+ 用户
+
+```
+POST /api/user/register
+POST /api/user/login
+GET  /api/user/info
+```
+
+---
+
+ 知识图谱
+
+```
+GET  /api/graph/all
+GET  /api/graph/{id}
+POST /api/graph/add
+```
+
+---
+
+ 路径推荐
+
+```
+GET /api/path/recommend?userId=1&target=机器学习
+```
+
+---
+
+ 四、项目开发步骤（强烈建议按这个顺序）
+
+---
+
+ 阶段1（基础搭建）
+
+* Spring Boot初始化
+* Vue项目初始化
+* MySQL连接
+* Neo4j连接
+
+---
+
+ 阶段2（核心数据）
+
+* 建知识图谱（手动导入 or CSV）
+* 实现基本查询接口
+
+---
+
+ 阶段3（用户系统）
+
+* 登录注册（JWT）
+* 学习记录
+
+---
+
+ 阶段4（推荐算法）
+
+先做简单版：
+
+👉 图最短路径 + 难度过滤
+
+再优化：
+
+👉 加兴趣推荐
+
+---
+
+ 阶段5（前端可视化）
+
+* 图谱展示
+* 路径高亮
+* 用户交互
+
+---
+
+ 阶段6（部署）
+
+* 后端：Linux + Docker（加分🔥）
+* 前端：Nginx
+* Neo4j云部署 or 本地服务器
+
+---
+
+ 五、论文亮点建议（帮你拿高分💯）
+
+你可以重点写：
+
+ ⭐ 创新点（随便选2-3个就够）
+
+1. **图搜索 + 推荐算法融合**
+2. **基于难度的动态路径优化**
+3. **可视化学习路径交互系统**
+4. **知识图谱驱动的个性化学习**
+
+---
+
+ 六、你现在可以先做什么（非常具体）
+
+👉 今天就可以开始：
+
+1. 安装：
+
+   * Neo4j
+   * MySQL
+
+2. 建一个最小图谱：
+
+```text
+高数 → 概率论 → 机器学习
+```
+
+3. 写一个接口：
+
+```
+返回学习路径
+```
+
+4. 前端画出来（ECharts）
+
+---
+
+ 七、如果你想继续深入
+
+我可以帮你继续细化👇：
+
+* ✅ 数据库完整ER图
+* ✅ Neo4j完整建模
+* ✅ 推荐算法代码（Java版）
+* ✅ Vue + ECharts完整页面
+* ✅ 开题报告 / 论文框架
+
+---
+
+如果你愿意，你可以告诉我👇
+👉 “你现在做到哪一步了（0基础 / 已建项目 / 已会Vue等）”
+
+我可以帮你**按天给你开发计划（非常具体）**，甚至带你一步一步做完这个毕设。

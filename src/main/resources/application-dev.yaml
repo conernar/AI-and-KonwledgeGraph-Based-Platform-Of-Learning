@@ -5,7 +5,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 替换为你的数据库名、用户名、密码
-    url: JDBC:mysql://localhost:3306/ai_learing_platform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: JDBC:mysql://localhost:3306/ai_learning_platform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root # 你的数据库用户名
     password: zkhzkh # 你的数据库密码
 server:

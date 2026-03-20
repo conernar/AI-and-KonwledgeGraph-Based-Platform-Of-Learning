@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +26,7 @@ public class Result<T> {
     public static <T> Result<T> success(String message, T data) {
         return new Result<>(200, message, data);
     }
+
 
     public static <T> Result<T> error() {
         return new Result<>(500, "操作失败", null);
