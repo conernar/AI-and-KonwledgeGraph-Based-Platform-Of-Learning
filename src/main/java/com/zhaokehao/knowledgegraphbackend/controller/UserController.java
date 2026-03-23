@@ -1,5 +1,6 @@
 package com.zhaokehao.knowledgegraphbackend.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zhaokehao.knowledgegraphbackend.common.result.Result;
 import com.zhaokehao.knowledgegraphbackend.entity.User;
 import com.zhaokehao.knowledgegraphbackend.service.UserService;
@@ -66,5 +67,21 @@ public class UserController {
     @DeleteMapping("/{id}")
     public Result<Void> deleteById(@PathVariable Long id){
         return userService.removeById(id) ? Result.success() : Result.error("failed to remove");
+    }
+
+    /**
+     * 使用MP封装的Page实现的分页查询
+     * @param pageNum 起始位置
+     * @param pageSize 数量
+     * @return Page<User>
+     */
+    @GetMapping("/page")
+    public Result<Page<User>> findPage(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize
+    ){
+        return Result.success(
+                userService.page(new Page<>(pageNum, pageSize))
+        );
     }
 }
